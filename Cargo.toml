@@ -1,0 +1,52 @@
+[package]
+name = "first-trading-app"
+version = "0.1.0"
+edition = "2021"
+description = "IBKR trend reversal trading application using EMA-based noise filtering"
+license = "MIT"
+
+[lib]
+name = "first_trading_app"
+path = "src/lib.rs"
+
+[[bin]]
+name = "first-trading-app"
+path = "src/main.rs"
+
+[[example]]
+name = "strategy_test"
+path = "examples/strategy_test.rs"
+
+[dependencies]
+tokio = { version = "1.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+reqwest = { version = "0.11", features = ["json"] }
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.0", features = ["v4", "serde"] }
+anyhow = "1.0"
+thiserror = "1.0"
+log = "0.4"
+env_logger = "0.10"
+config = "0.14"
+rust_decimal = { version = "1.0", features = ["serde"] }
+rust_decimal_macros = "1.0"
+
+# For IBKR API integration
+ibapi = "0.4"
+
+# For technical analysis
+ta = "0.5"
+
+# For async channels and synchronization
+tokio-util = "0.7"
+futures = "0.3"
+
+# For configuration
+toml = "0.8"
+
+# For random number generation (market data simulation)
+rand = "0.8"
+
+[dev-dependencies]
+tokio-test = "0.4"

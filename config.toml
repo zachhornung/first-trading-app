@@ -1,0 +1,110 @@
+[ibkr]
+host = "127.0.0.1"
+port = 7497  # Paper trading port (7496 for live trading)
+client_id = 1
+account_id = "DU123456"  # Replace with your paper trading account ID
+paper_trading = true
+
+[strategy]
+ema_periods = [9, 21, 50]  # Fast, medium, slow EMAs
+noise_filter_threshold = 0.5
+gap_threshold = 0.02  # 2% gap threshold for reversal signals
+reversal_confirmation_periods = 3
+min_confidence_threshold = 0.6
+lookback_periods = 100
+
+[enhanced_strategy]
+strategy_type = "Combined"
+
+[enhanced_strategy.indicators]
+# RSI Configuration
+rsi_enabled = true
+rsi_period = 14
+rsi_weight = 1.0
+
+# MACD Configuration
+macd_enabled = true
+macd_fast_period = 12
+macd_slow_period = 26
+macd_signal_period = 9
+macd_weight = 1.0
+
+# Bollinger Bands Configuration
+bollinger_enabled = true
+bollinger_period = 20
+bollinger_std_dev = 2.0
+bollinger_weight = 0.8
+
+# Stochastic Oscillator (disabled by default to avoid redundancy with RSI)
+stochastic_enabled = false
+stochastic_k_period = 14
+stochastic_d_period = 3
+stochastic_weight = 0.7
+
+# Williams %R (disabled by default)
+williams_r_enabled = false
+williams_r_period = 14
+williams_r_weight = 0.6
+
+# Commodity Channel Index (disabled by default)
+cci_enabled = false
+cci_period = 20
+cci_weight = 0.7
+
+# Average True Range (for volatility measurement)
+atr_enabled = true
+atr_period = 14
+atr_weight = 0.5
+
+# Volume Analysis
+volume_enabled = true
+volume_period = 20
+volume_weight = 0.6
+
+# Support and Resistance
+support_resistance_enabled = true
+support_resistance_lookback = 50
+support_resistance_weight = 0.8
+
+[enhanced_strategy.signal_weights]
+trend_following = 1.0
+mean_reversion = 0.8
+momentum = 0.9
+volume_confirmation = 0.6
+volatility_adjustment = 0.5
+
+[enhanced_strategy.risk_parameters]
+min_confidence_threshold = 0.6
+max_position_size = 0.1  # 10% of portfolio
+stop_loss_pct = 0.05     # 5%
+take_profit_pct = 0.10   # 10%
+max_drawdown_pct = 0.15  # 15%
+correlation_threshold = 0.7
+
+[enhanced_strategy.backtesting]
+enabled = false
+start_date = "2023-01-01T00:00:00Z"
+end_date = "2024-01-01T00:00:00Z"
+initial_capital = 100000.0
+commission_per_trade = 1.0
+slippage_pct = 0.001  # 0.1%
+benchmark_symbol = "SPY"
+
+[trading]
+symbols = ["AAPL", "MSFT", "GOOGL", "TSLA", "NVDA"]
+timeframe = "1min"
+max_positions = 5
+position_size_pct = 0.1  # 10% of portfolio per position
+
+[trading.trading_hours]
+start = "09:30"
+end = "16:00"
+timezone = "US/Eastern"
+
+[risk]
+max_daily_loss_pct = 0.02  # 2% maximum daily loss
+max_position_size_pct = 0.15  # 15% maximum position size
+stop_loss_pct = 0.05  # 5% stop loss
+take_profit_pct = 0.10  # 10% take profit
+max_correlation = 0.7
+var_limit = 0.03  # 3% VaR limit
