@@ -3,18 +3,79 @@ use chrono::Utc;
 use rust_decimal::Decimal;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal_macros::dec;
-
 // Include the modules from the main application
 use first_trading_app::config::StrategyConfig;
 use first_trading_app::data::{PriceData, MarketDataManager, OHLCV};
 use first_trading_app::strategy::TrendReversalStrategy;
+use first_trading_app::indicators::{RSI, MACDIndicator, BollingerBandsIndicator};
 
 #[tokio::main]
 async fn main() -> Result<()> {
     // Initialize logging
     env_logger::init();
-    println!("Strategy Test Example - IBKR Trend Reversal");
-    println!("============================================\n");
+    println!("🚀 IBKR Trading Platform - Strategy & Indicator Testing");
+    println!("======================================================\n");
+
+    // Run all tests
+    test_individual_indicators().await?;
+    test_trend_reversal_strategy().await?;
+    test_strategy_comparison().await?;
+
+    println!("\n✅ All tests completed successfully!");
+    Ok(())
+}
+
+/// Test individual technical indicators
+async fn test_individual_indicators() -> Result<()> {
+    println!("📊 Testing Individual Technical Indicators");
+    println!("==========================================\n");
+
+    // Test RSI
+    println!("Testing RSI (Relative Strength Index):");
+    let mut rsi = RSI::new(14);
+    let rsi_test_prices = vec![44.0, 44.25, 44.5, 43.75, 44.0, 44.25, 45.0, 47.0, 46.75, 46.5, 46.25, 47.75, 47.5, 47.25, 48.0];
+    
+    for (i, price) in rsi_test_prices.iter().enumerate() {
+        if let Some(rsi_value) = rsi.update(*price) {
+            let signal = rsi.generate_signal(rsi_value);
+            println!("  Day {}: Price=${:.2}, RSI={:.2}, Signal={:?}", i+1, price, rsi_value, signal.signal_type);
+        }
+    }
+
+    // Test MACD
+    println!("\nTesting MACD (Moving Average Convergence Divergence):");
+    let mut macd = MACDIndicator::new(12, 26, 9);
+    let macd_test_prices = generate_trending_prices(50, 100.0, 0.02)?;
+    
+    for (i, price) in macd_test_prices.iter().enumerate().take(10) {
+        if let Some(macd_data) = macd.update(*price) {
+            let signal = macd.generate_signal(&macd_data);
+            println!("  Day {}: Price=${:.2}, MACD={:.3}, Signal={:.3}, Histogram={:.3}, Signal={:?}", 
+                     i+1, price, macd_data.macd_line, macd_data.signal_line, macd_data.histogram, signal.signal_type);
+        }
+    }
+
+    // Test Bollinger Bands
+    println!("\nTesting Bollinger Bands:");
+    let mut bb = BollingerBandsIndicator::new(20, 2.0);
+    let bb_test_prices = generate_volatile_prices(30, 100.0, 0.03)?;
+    
+    for (i, price) in bb_test_prices.iter().enumerate().skip(19).take(10) {
+        if let Some(bands) = bb.update(*price) {
+            let signal = bb.generate_signal(&bands, *price);
+            println!("  Day {}: Price=${:.2}, Upper=${:.2}, Middle=${:.2}, Lower=${:.2}, Signal={:?}", 
+                     i+1, price, bands.upper, bands.middle, bands.lower, signal.signal_type);
+        }
+    }
+
+    println!();
+    Ok(())
+}
+
+/// Test the trend reversal strategy
+async fn test_trend_reversal_strategy() -> Result<()> {
+    println!("📈 Testing Trend Reversal Strategy");
+    println!("=================================\n");
 
     // Create strategy configuration
     let strategy_config = StrategyConfig {
@@ -37,7 +98,7 @@ async fn main() -> Result<()> {
     // Generate sample price data to simulate market conditions
     let test_data = generate_sample_data(symbol, 150)?;
     
-    println!("Generated {} price points for backtesting\n", test_data.len());
+    println!("Generated {} price points for backtesting", test_data.len());
 
     // Process each price point through the strategy
     let mut signals_generated = 0;
@@ -83,46 +144,147 @@ async fn main() -> Result<()> {
             }
         }
 
-        // Show progress every 25 data points
-        if (i + 1) % 25 == 0 {
+        // Show progress every 50 data points
+        if (i + 1) % 50 == 0 {
             println!("Processed {} price points...", i + 1);
         }
     }
 
     // Summary
     println!("\n{}", "=".repeat(50));
-    println!("STRATEGY TEST SUMMARY");
+    println!("TREND REVERSAL STRATEGY SUMMARY");
     println!("{}", "=".repeat(50));
     println!("Total price points processed: {}", test_data.len());
     println!("Total signals generated: {}", signals_generated);
     println!("  - Buy signals: {}", buy_signals);
     println!("  - Sell signals: {}", sell_signals);
     println!("Signal frequency: {:.2}%", (signals_generated as f64 / test_data.len() as f64) * 100.0);
-
-    if signals_generated > 0 {
-        println!("\nStrategy Configuration Used:");
-        println!("  - EMA Periods: {:?}", strategy_config.ema_periods);
-        println!("  - Gap Threshold: {:.1}%", strategy_config.gap_threshold * 100.0);
-        println!("  - Min Confidence: {:.1}%", strategy_config.min_confidence_threshold * 100.0);
-        println!("  - Noise Filter: {:.1}", strategy_config.noise_filter_threshold);
-    } else {
-        println!("\nNo signals generated. Consider adjusting strategy parameters:");
-        println!("  - Lower gap_threshold (currently {:.1}%)", strategy_config.gap_threshold * 100.0);
-        println!("  - Lower min_confidence_threshold (currently {:.1}%)", strategy_config.min_confidence_threshold * 100.0);
-        println!("  - Increase noise_filter_threshold (currently {:.1})", strategy_config.noise_filter_threshold);
-    }
-
-    // Test specific market conditions
-    println!("\n{}", "=".repeat(50));
-    println!("TESTING SPECIFIC MARKET CONDITIONS");
-    println!("{}", "=".repeat(50));
     
-    test_trending_market(&mut strategy, "Uptrend Test").await?;
-    test_reversal_scenario(&mut strategy, "Reversal Test").await?;
-
-    println!("\nStrategy test completed successfully!");
+    // Calculate signal ratio
+    if signals_generated > 0 {
+        println!("Buy/Sell ratio: {:.1}:{:.1}", buy_signals as f64, sell_signals as f64);
+    }
+    
     Ok(())
 }
+
+
+
+/// Compare different strategies side by side
+async fn test_strategy_comparison() -> Result<()> {
+    println!("\n⚖️  Strategy Comparison Test");
+    println!("===========================\n");
+    
+    let symbol = "TSLA";
+    let comparison_data = generate_sample_data(symbol, 100)?;
+    
+    // Test basic trend reversal
+    let basic_config = StrategyConfig {
+        ema_periods: vec![9, 21, 50],
+        noise_filter_threshold: 0.3,
+        gap_threshold: 0.02,
+        reversal_confirmation_periods: 2,
+        min_confidence_threshold: 0.5,
+        lookback_periods: 50,
+    };
+    
+    let mut basic_strategy = TrendReversalStrategy::new(&basic_config)?;
+    let mut basic_signals = 0;
+    
+    println!("Running basic trend reversal strategy...");
+    for data_point in &comparison_data {
+        let signals = basic_strategy.analyze(symbol, data_point).await?;
+        basic_signals += signals.len();
+    }
+    
+    // Test conservative settings
+    let conservative_config = StrategyConfig {
+        ema_periods: vec![20, 50, 100],
+        noise_filter_threshold: 0.2,
+        gap_threshold: 0.035, // Higher threshold
+        reversal_confirmation_periods: 5,
+        min_confidence_threshold: 0.8, // Higher confidence required
+        lookback_periods: 100,
+    };
+    
+    let mut conservative_strategy = TrendReversalStrategy::new(&conservative_config)?;
+    let mut conservative_signals = 0;
+    
+    println!("Running conservative trend reversal strategy...");
+    for data_point in &comparison_data {
+        let signals = conservative_strategy.analyze(symbol, data_point).await?;
+        conservative_signals += signals.len();
+    }
+    
+    // Test aggressive settings
+    let aggressive_config = StrategyConfig {
+        ema_periods: vec![5, 10, 20],
+        noise_filter_threshold: 0.6,
+        gap_threshold: 0.01, // Lower threshold
+        reversal_confirmation_periods: 1,
+        min_confidence_threshold: 0.4, // Lower confidence required
+        lookback_periods: 30,
+    };
+    
+    let mut aggressive_strategy = TrendReversalStrategy::new(&aggressive_config)?;
+    let mut aggressive_signals = 0;
+    
+    println!("Running aggressive trend reversal strategy...");
+    for data_point in &comparison_data {
+        let signals = aggressive_strategy.analyze(symbol, data_point).await?;
+        aggressive_signals += signals.len();
+    }
+    
+    println!("\n{}", "=".repeat(50));
+    println!("STRATEGY COMPARISON RESULTS");
+    println!("{}", "=".repeat(50));
+    println!("Data points analyzed: {}", comparison_data.len());
+    println!("Basic Strategy signals: {}", basic_signals);
+    println!("Conservative Strategy signals: {}", conservative_signals);
+    println!("Aggressive Strategy signals: {}", aggressive_signals);
+    
+    println!("\nSignal frequency comparison:");
+    println!("  Basic: {:.2}%", (basic_signals as f64 / comparison_data.len() as f64) * 100.0);
+    println!("  Conservative: {:.2}%", (conservative_signals as f64 / comparison_data.len() as f64) * 100.0);
+    println!("  Aggressive: {:.2}%", (aggressive_signals as f64 / comparison_data.len() as f64) * 100.0);
+    
+    Ok(())
+}
+
+/// Generate trending prices for testing
+fn generate_trending_prices(count: usize, start_price: f64, trend_rate: f64) -> Result<Vec<f64>> {
+    let mut prices = Vec::new();
+    let mut current_price = start_price;
+    
+    for i in 0..count {
+        // Add trend
+        current_price *= 1.0 + trend_rate;
+        
+        // Add some noise
+        let noise = (i as f64 * 0.01).sin() * 0.5;
+        prices.push(current_price + noise);
+    }
+    
+    Ok(prices)
+}
+
+/// Generate volatile prices for testing
+fn generate_volatile_prices(count: usize, base_price: f64, volatility: f64) -> Result<Vec<f64>> {
+    let mut prices = Vec::new();
+    let mut current_price = base_price;
+    
+    for i in 0..count {
+        // Add volatility
+        let change_pct = (i as f64 * 0.1).sin() * volatility;
+        current_price *= 1.0 + change_pct;
+        prices.push(current_price);
+    }
+    
+    Ok(prices)
+}
+
+/// Generate complex market data patterns for testing
+
 
 fn generate_sample_data(symbol: &str, count: usize) -> Result<Vec<PriceData>> {
     let mut data: Vec<PriceData> = Vec::new();
@@ -169,96 +331,4 @@ fn generate_sample_data(symbol: &str, count: usize) -> Result<Vec<PriceData>> {
     }
 
     Ok(data)
-}
-
-async fn test_trending_market(strategy: &mut TrendReversalStrategy, test_name: &str) -> Result<()> {
-    println!("\n{}", test_name);
-    println!("{}", "-".repeat(test_name.len()));
-    
-    // Create strong uptrend followed by potential reversal
-    let mut price = dec!(100.0);
-    let symbol = "TEST_TREND";
-    
-    // Strong uptrend (should not generate sell signals)
-    for i in 0..10 {
-        price += dec!(2.0); // Strong upward movement
-        
-        let price_data = PriceData {
-            symbol: symbol.to_string(),
-            timestamp: Utc::now() + chrono::Duration::minutes(i),
-            open: price - dec!(0.5),
-            high: price + dec!(0.5),
-            low: price - dec!(1.0),
-            close: price,
-            volume: 50000,
-        };
-
-        let signals = strategy.analyze(symbol, &price_data).await?;
-        if !signals.is_empty() {
-            println!("Signal during uptrend at ${:.2}: {:?}", price, signals[0].action);
-        }
-    }
-
-    // Sharp reversal (should generate signals)
-    for i in 0..5 {
-        price -= dec!(3.0); // Sharp downward movement
-        
-        let price_data = PriceData {
-            symbol: symbol.to_string(),
-            timestamp: Utc::now() + chrono::Duration::minutes(10 + i),
-            open: price + dec!(1.0),
-            high: price + dec!(2.0),
-            low: price - dec!(0.5),
-            close: price,
-            volume: 75000,
-        };
-
-        let signals = strategy.analyze(symbol, &price_data).await?;
-        for signal in signals {
-            println!("Reversal signal at ${:.2}: {:?} (Confidence: {:.1}%)", 
-                     price, signal.action, signal.confidence * 100.0);
-        }
-    }
-
-    Ok(())
-}
-
-async fn test_reversal_scenario(strategy: &mut TrendReversalStrategy, test_name: &str) -> Result<()> {
-    println!("\n{}", test_name);
-    println!("{}", "-".repeat(test_name.len()));
-    
-    let symbol = "TEST_REV";
-    let _base_price = dec!(200.0);
-    
-    // Create scenario: price moves away from EMA, then reverses
-    let scenarios = vec![
-        (dec!(200.0), "Baseline"),
-        (dec!(195.0), "Small drop"),
-        (dec!(190.0), "Medium drop"),
-        (dec!(185.0), "Large drop - potential reversal zone"),
-        (dec!(188.0), "Bounce back"),
-        (dec!(192.0), "Continued recovery"),
-    ];
-
-    for (i, (price, description)) in scenarios.iter().enumerate() {
-        let price_data = PriceData {
-            symbol: symbol.to_string(),
-            timestamp: Utc::now() + chrono::Duration::minutes(i as i64),
-            open: *price - dec!(0.5),
-            high: *price + dec!(1.0),
-            low: *price - dec!(1.5),
-            close: *price,
-            volume: 60000,
-        };
-
-        let signals = strategy.analyze(symbol, &price_data).await?;
-        
-        println!("{}: ${:.2}", description, price);
-        for signal in signals {
-            println!("  -> {:?} signal (Confidence: {:.1}%, Gap: {:.3}%)", 
-                     signal.action, signal.confidence * 100.0, signal.ema_gap * 100.0);
-        }
-    }
-
-    Ok(())
 }

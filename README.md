@@ -1,267 +1,562 @@
-# IBKR Trend Reversal Trading App
+# IBKR Algorithmic Trading Platform
 
-A Rust-based algorithmic trading application that implements a trend reversal strategy using Exponential Moving Averages (EMAs) as noise filters, designed to work with Interactive Brokers (IBKR) using the rust-ibapi crate.
+A comprehensive Rust-based algorithmic trading application that implements multiple trading strategies and technical indicators, designed to work with Interactive Brokers (IBKR) using native Rust APIs.
 
 ## Overview
 
-This trading application implements a sophisticated trend reversal strategy that:
+This trading platform provides a sophisticated framework for algorithmic trading with:
 
-- Uses EMAs as noise filters rather than direct signals
-- Analyzes the gap between current price and EMA values
-- Identifies potential trend reversals with confirmation periods
-- Manages risk through position sizing and stop-loss mechanisms
-- Integrates with Interactive Brokers for live trading
+- **Multiple Trading Strategies**: Trend reversal, mean reversion, momentum, and multi-indicator strategies
+- **Comprehensive Technical Indicators**: RSI, MACD, Bollinger Bands, Stochastic, Williams %R, CCI, ATR, SMA, EMA, Volume indicators, and Support/Resistance
+- **Advanced Risk Management**: Position sizing, stop-loss, correlation analysis, and portfolio-wide risk controls
+- **Real-time Market Data**: Native integration with Interactive Brokers TWS/Gateway
+- **Backtesting Engine**: Historical strategy testing with performance analytics
+- **Paper Trading Support**: Safe testing environment before live trading
 
-## Strategy Explanation
+## 🚀 Quick Start
 
-### Core Concept
-The strategy focuses on identifying trend reversal points by analyzing the relationship between current price and Exponential Moving Averages. Instead of using EMA crossovers, it examines the "gap" between price and EMA to filter out market noise and identify genuine trend changes.
+### Prerequisites
 
-### Key Components
-1. **EMA Noise Filter**: Uses multiple EMAs (9, 21, 50 periods) to reduce false signals
-2. **Gap Analysis**: Measures the distance between current price and primary EMA
-3. **Trend Direction**: Determines current trend based on EMA alignment
-4. **Reversal Probability**: Calculates likelihood of trend reversal using multiple factors
-5. **Confirmation Periods**: Requires multiple periods of confirmation before signaling
+1. **Rust** (latest stable): Install from [rustup.rs](https://rustup.rs/)
+2. **Interactive Brokers Account**: Paper or live trading account
+3. **IBKR TWS/Gateway**: Download from Interactive Brokers
+4. **API Access**: Enable in your IBKR account settings
 
-### Trading Logic
-- **Buy Signal**: Generated when downward trend shows large positive gap (price above EMA)
-- **Sell Signal**: Generated when upward trend shows large negative gap (price below EMA)
-- **Confidence Scoring**: Each signal includes confidence level based on gap size, noise level, and trend age
+### Installation
 
-## Features
-
-- **Real-time Market Data**: Connects to IBKR TWS/Gateway for live market data via rust-ibapi
-- **Automated Trading**: Places orders based on strategy signals through native Rust API
-- **Portfolio Management**: Tracks positions, P&L, and risk metrics
-- **Risk Management**: Implements position sizing, stop-loss, and daily loss limits
-- **Configurable Strategy**: All parameters can be adjusted via configuration file
-- **Paper Trading**: Supports both paper and live trading modes
-- **Native Rust Integration**: Uses rust-ibapi crate for direct TWS API communication
-
-## Prerequisites
-
-1. **Rust**: Install Rust from [rustup.rs](https://rustup.rs/)
-2. **Interactive Brokers Account**: Either paper trading or live account
-3. **IBKR TWS or Gateway**: Download and install from IBKR
-4. **API Access**: Enable API access in your IBKR account settings
-5. **rust-ibapi**: Automatically included as a dependency
-
-## Setup Instructions
-
-### 1. Clone and Build
 ```bash
 git clone <repository-url>
 cd first-trading-app
 cargo build --release
 ```
 
-### 2. Configure IBKR TWS/Gateway
-1. Download and install IBKR TWS or Gateway from Interactive Brokers
-2. Log in with your IBKR credentials
-3. Enable API access:
-   - Go to Global Configuration → API → Settings
-   - Enable "Enable ActiveX and Socket Clients"
-   - Set API port (7497 for paper, 7496 for live)
-   - Add your machine's IP to trusted IPs (use 127.0.0.1, not localhost)
-4. Start TWS/Gateway and keep it running
+### Basic Setup
 
-### 3. Configuration
-Edit `config.toml` to match your setup:
+1. **Configure IBKR TWS/Gateway**:
+   - Enable API access in Global Configuration → API → Settings
+   - Set API port (7497 for paper, 7496 for live)
+   - Add 127.0.0.1 to trusted IPs
+
+2. **Edit Configuration** (`config.toml`):
+   ```toml
+   [ibkr]
+   host = "127.0.0.1"
+   port = 7497  # Paper trading
+   account_id = "YOUR_ACCOUNT_ID"
+   paper_trading = true
+
+   [trading]
+   symbols = ["AAPL", "MSFT", "GOOGL", "TSLA"]
+   position_size_pct = 0.1  # 10% per position
+   ```
+
+3. **Run the Application**:
+   ```bash
+   cargo run --release
+   ```
+
+## 📊 Available Strategies
+
+### 1. Trend Reversal Strategy
+
+**Purpose**: Identifies potential trend reversals using EMA gap analysis.
+
+**How it Works**:
+- Uses multiple EMAs (9, 21, 50 periods) as noise filters
+- Analyzes price gaps relative to EMAs
+- Generates signals when trends show exhaustion
+- Requires confirmation periods to reduce false signals
+
+**Configuration Example**:
+```toml
+[strategy]
+ema_periods = [9, 21, 50]
+gap_threshold = 0.02  # 2% gap for reversal
+min_confidence_threshold = 0.6
+reversal_confirmation_periods = 3
+```
+
+**Best For**: Range-bound markets, counter-trend trading
+
+### 2. Enhanced Multi-Indicator Strategy
+
+**Purpose**: Combines multiple technical indicators for robust signal generation.
+
+**Indicators Used**:
+- RSI for momentum
+- MACD for trend changes
+- Bollinger Bands for volatility
+- Volume analysis for confirmation
+- Support/Resistance levels
+
+**Configuration Example**:
+```toml
+[enhanced_strategy]
+strategy_type = "Combined"
+
+[enhanced_strategy.indicators]
+rsi_enabled = true
+rsi_period = 14
+rsi_weight = 1.0
+
+macd_enabled = true
+macd_fast_period = 12
+macd_slow_period = 26
+macd_signal_period = 9
+macd_weight = 1.0
+
+bollinger_enabled = true
+bollinger_period = 20
+bollinger_std_dev = 2.0
+bollinger_weight = 0.8
+```
+
+**Best For**: Trending markets, confirmation-based trading
+
+## 🔧 Technical Indicators
+
+### Momentum Indicators
+
+#### RSI (Relative Strength Index)
+- **Purpose**: Measures overbought/oversold conditions
+- **Range**: 0-100
+- **Signals**: >70 overbought, <30 oversold
+- **Configuration**:
+  ```toml
+  rsi_enabled = true
+  rsi_period = 14
+  rsi_weight = 1.0
+  ```
+
+#### Stochastic Oscillator
+- **Purpose**: Compares closing price to price range
+- **Range**: 0-100
+- **Signals**: >80 overbought, <20 oversold
+- **Configuration**:
+  ```toml
+  stochastic_enabled = true
+  stochastic_k_period = 14
+  stochastic_d_period = 3
+  stochastic_weight = 0.7
+  ```
+
+#### Williams %R
+- **Purpose**: Momentum indicator similar to Stochastic
+- **Range**: -100 to 0
+- **Signals**: >-20 overbought, <-80 oversold
+- **Configuration**:
+  ```toml
+  williams_r_enabled = true
+  williams_r_period = 14
+  williams_r_weight = 0.6
+  ```
+
+#### CCI (Commodity Channel Index)
+- **Purpose**: Identifies cyclical trends
+- **Range**: Unbounded (typically ±100)
+- **Signals**: >100 overbought, <-100 oversold
+- **Configuration**:
+  ```toml
+  cci_enabled = true
+  cci_period = 20
+  cci_weight = 0.7
+  ```
+
+### Trend Indicators
+
+#### MACD (Moving Average Convergence Divergence)
+- **Purpose**: Trend following momentum indicator
+- **Components**: MACD line, Signal line, Histogram
+- **Signals**: Line crossovers, histogram divergence
+- **Configuration**:
+  ```toml
+  macd_enabled = true
+  macd_fast_period = 12
+  macd_slow_period = 26
+  macd_signal_period = 9
+  macd_weight = 1.0
+  ```
+
+#### EMA (Exponential Moving Average)
+- **Purpose**: Trend direction and support/resistance
+- **Responsive**: More weight to recent prices
+- **Multiple Periods**: Fast (9), Medium (21), Slow (50)
+- **Configuration**:
+  ```toml
+  ema_periods = [9, 21, 50]
+  ```
+
+#### SMA (Simple Moving Average)
+- **Purpose**: Smooth price action, trend identification
+- **Equal Weight**: All periods weighted equally
+- **Usage**: Trend direction, crossover signals
+
+### Volatility Indicators
+
+#### Bollinger Bands
+- **Purpose**: Measure volatility and identify overbought/oversold
+- **Components**: Upper band, Middle (SMA), Lower band
+- **Signals**: Price touching bands, band squeezes
+- **Configuration**:
+  ```toml
+  bollinger_enabled = true
+  bollinger_period = 20
+  bollinger_std_dev = 2.0
+  bollinger_weight = 0.8
+  ```
+
+#### ATR (Average True Range)
+- **Purpose**: Measure market volatility
+- **Usage**: Position sizing, stop-loss placement
+- **Not Directional**: Only measures volatility magnitude
+- **Configuration**:
+  ```toml
+  atr_enabled = true
+  atr_period = 14
+  atr_weight = 0.5
+  ```
+
+### Volume Indicators
+
+#### Volume Analysis
+- **Purpose**: Confirm price movements with volume
+- **Metrics**: Volume ratio, average volume
+- **Signals**: High volume on breakouts
+- **Configuration**:
+  ```toml
+  volume_enabled = true
+  volume_period = 20
+  volume_weight = 0.6
+  ```
+
+### Support/Resistance
+
+#### Dynamic Support/Resistance
+- **Purpose**: Identify key price levels
+- **Method**: Historical high/low analysis
+- **Usage**: Entry/exit points, risk management
+- **Configuration**:
+  ```toml
+  support_resistance_enabled = true
+  support_resistance_lookback = 50
+  support_resistance_weight = 0.8
+  ```
+
+## ⚙️ Configuration Guide
+
+### Complete Configuration Example
 
 ```toml
 [ibkr]
 host = "127.0.0.1"
-port = 7497  # Paper trading port
+port = 7497
 client_id = 1
-account_id = "YOUR_PAPER_ACCOUNT_ID"  # Replace with your account ID
+account_id = "DU123456"
 paper_trading = true
 
 [strategy]
 ema_periods = [9, 21, 50]
-gap_threshold = 0.02  # 2% gap for reversal signals
+noise_filter_threshold = 0.5
+gap_threshold = 0.02
+reversal_confirmation_periods = 3
 min_confidence_threshold = 0.6
+lookback_periods = 100
+
+[enhanced_strategy]
+strategy_type = "Combined"
+
+[enhanced_strategy.indicators]
+# Momentum Indicators
+rsi_enabled = true
+rsi_period = 14
+rsi_weight = 1.0
+
+stochastic_enabled = false
+stochastic_k_period = 14
+stochastic_d_period = 3
+stochastic_weight = 0.7
+
+williams_r_enabled = false
+williams_r_period = 14
+williams_r_weight = 0.6
+
+cci_enabled = false
+cci_period = 20
+cci_weight = 0.7
+
+# Trend Indicators
+macd_enabled = true
+macd_fast_period = 12
+macd_slow_period = 26
+macd_signal_period = 9
+macd_weight = 1.0
+
+# Volatility Indicators
+bollinger_enabled = true
+bollinger_period = 20
+bollinger_std_dev = 2.0
+bollinger_weight = 0.8
+
+atr_enabled = true
+atr_period = 14
+atr_weight = 0.5
+
+# Volume Indicators
+volume_enabled = true
+volume_period = 20
+volume_weight = 0.6
+
+# Support/Resistance
+support_resistance_enabled = true
+support_resistance_lookback = 50
+support_resistance_weight = 0.8
+
+[enhanced_strategy.signal_weights]
+trend_following = 1.0
+mean_reversion = 0.8
+momentum = 0.9
+volume_confirmation = 0.6
+volatility_adjustment = 0.5
+
+[enhanced_strategy.risk_parameters]
+min_confidence_threshold = 0.6
+max_position_size = 0.1
+stop_loss_pct = 0.05
+take_profit_pct = 0.10
+max_drawdown_pct = 0.15
+correlation_threshold = 0.7
+
+[enhanced_strategy.backtesting]
+enabled = false
+initial_capital = 100000.0
+commission_per_trade = 1.0
+slippage_pct = 0.001
+benchmark_symbol = "SPY"
 
 [trading]
-symbols = ["AAPL", "MSFT", "GOOGL", "TSLA"]
-position_size_pct = 0.1  # 10% of portfolio per position
+symbols = ["AAPL", "MSFT", "GOOGL", "TSLA", "NVDA"]
+timeframe = "1min"
+max_positions = 5
+position_size_pct = 0.1
+
+[trading.trading_hours]
+start = "09:30"
+end = "16:00"
+timezone = "US/Eastern"
 
 [risk]
-max_daily_loss_pct = 0.02  # 2% maximum daily loss
-stop_loss_pct = 0.05  # 5% stop loss
+max_daily_loss_pct = 0.02
+max_position_size_pct = 0.15
+stop_loss_pct = 0.05
+take_profit_pct = 0.10
+max_correlation = 0.7
+var_limit = 0.03
 ```
 
-### 4. Run the Application
+## 🧪 Testing Strategies and Indicators
+
+### Running Strategy Tests
+
 ```bash
-# Set log level (optional)
-export RUST_LOG=info
+# Test specific strategy
+cargo run --example strategy_test
 
-# Run the trading application
-cargo run --release
-```
-
-## Configuration Reference
-
-### IBKR Settings
-- `host`: IBKR TWS/Gateway host (use 127.0.0.1, not localhost)
-- `port`: API port (7497 for paper, 7496 for live)
-- `client_id`: Unique client identifier (different for each connection)
-- `account_id`: Your IBKR account ID
-- `paper_trading`: true for paper trading, false for live
-
-### Strategy Parameters
-- `ema_periods`: EMA periods for trend analysis [fast, medium, slow]
-- `noise_filter_threshold`: Threshold for noise filtering (0.0-1.0)
-- `gap_threshold`: Minimum gap percentage for signal generation
-- `reversal_confirmation_periods`: Number of periods to confirm reversal
-- `min_confidence_threshold`: Minimum confidence for trade execution
-- `lookback_periods`: Historical periods to analyze
-
-### Trading Settings
-- `symbols`: List of symbols to trade
-- `timeframe`: Data timeframe (1min, 5min, 1h, etc.)
-- `max_positions`: Maximum number of concurrent positions
-- `position_size_pct`: Position size as percentage of portfolio
-
-### Risk Management
-- `max_daily_loss_pct`: Maximum daily loss percentage
-- `max_position_size_pct`: Maximum individual position size
-- `stop_loss_pct`: Stop loss percentage
-- `take_profit_pct`: Take profit percentage
-
-## Usage
-
-### Starting the Application
-1. Ensure IBKR TWS/Gateway is running and configured
-2. Update `config.toml` with your settings
-3. Run `cargo run --release` or use `./run.sh`
-4. Monitor logs for connection status and trading activity
-
-### Monitoring
-The application logs important events including:
-- Connection status to IBKR
-- Market data subscriptions
-- Trading signals generated
-- Orders placed and executed
-- Portfolio updates
-- Risk limit violations
-
-### Stopping the Application
-- Use Ctrl+C to gracefully stop the application
-- The application will attempt to close connections cleanly
-
-## Architecture
-
-### Main Components
-- **Strategy Engine**: Implements the trend reversal algorithm
-- **IBKR Client**: Native Rust client using rust-ibapi for TWS communication
-- **Market Data Manager**: Processes and stores market data
-- **Portfolio Manager**: Tracks positions and calculates metrics
-- **Risk Manager**: Enforces risk limits and position sizing
-
-### Data Flow
-1. Market data received from IBKR
-2. Data processed and stored by Market Data Manager
-3. Strategy Engine analyzes data and generates signals
-4. Portfolio Manager validates trades against risk limits
-5. Orders sent to IBKR for execution
-6. Portfolio updated with trade results
-
-## Safety Features
-
-### Paper Trading
-- Always start with paper trading to test your configuration
-- Paper trading uses the same API but with simulated money
-- No risk of financial loss during testing
-
-### Risk Limits
-- Daily loss limits prevent excessive losses
-- Position size limits control concentration risk
-- Stop-loss orders limit per-trade losses
-- Correlation checks prevent over-concentration
-
-### Error Handling
-- Robust error handling for network issues
-- Automatic reconnection to IBKR Gateway
-- Graceful handling of invalid orders
-- Detailed logging for troubleshooting
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Connection Failed**
-   - Verify IBKR TWS/Gateway is running
-   - Check port configuration matches TWS/Gateway settings
-   - Use 127.0.0.1 instead of localhost
-   - Ensure API access is enabled in IBKR
-   - Make sure client_id is unique and not in use
-
-2. **Authentication Errors**
-   - Verify account ID is correct
-   - Check if API access is enabled for your account
-   - Ensure client ID is not in use by another application
-   - Restart TWS/Gateway if connection issues persist
-
-3. **No Market Data**
-   - Verify market data subscriptions in IBKR
-   - Check if markets are open
-   - Ensure symbols are valid and tradeable
-   - Check market data permissions in your account
-
-4. **Orders Rejected**
-   - Check account permissions for the instrument
-   - Verify sufficient buying power
-   - Check if outside trading hours
-   - Ensure order parameters are valid
-
-### Logs
-Enable detailed logging:
-```bash
-export RUST_LOG=debug
-cargo run --release
-```
-
-## Testing
-
-Run the test suite:
-```bash
-# Run all tests
+# Run all unit tests
 cargo test
 
-# Run specific module tests
-cargo test strategy
-cargo test portfolio
-cargo test ibkr
+# Test specific indicator
+cargo test indicators::rsi
+cargo test indicators::macd
 ```
 
-## Disclaimer
+### Backtesting
 
-⚠️ **Important Risk Warning** ⚠️
+Enable backtesting in configuration:
+```toml
+[enhanced_strategy.backtesting]
+enabled = true
+start_date = "2023-01-01"
+end_date = "2023-12-31"
+initial_capital = 100000.0
+benchmark_symbol = "SPY"
+```
 
-This software is for educational and research purposes. Algorithmic trading involves substantial risk of loss and is not suitable for all investors. 
+### Paper Trading Test
 
-- Always test thoroughly with paper trading first
-- Never risk more than you can afford to lose
-- Past performance does not guarantee future results
-- The developers are not responsible for any financial losses
+1. Configure for paper trading:
+   ```toml
+   [ibkr]
+   port = 7497
+   paper_trading = true
+   ```
 
-## Contributing
+2. Start with small position sizes:
+   ```toml
+   [trading]
+   position_size_pct = 0.05  # Start with 5%
+   ```
 
-1. Fork the repository
-2. Create a feature branch
-3. Add tests for new functionality
-4. Ensure all tests pass
-5. Submit a pull request
+3. Monitor logs:
+   ```bash
+   export RUST_LOG=info
+   cargo run --release
+   ```
 
-## License
+## 📈 Strategy Customization
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+### Creating Custom Indicator Combinations
 
-## Support
+```toml
+# Conservative Setup (Lower Risk)
+[enhanced_strategy.indicators]
+rsi_enabled = true
+rsi_weight = 0.8
+bollinger_enabled = true
+bollinger_weight = 0.9
+volume_enabled = true
+volume_weight = 0.7
 
-For issues and questions:
-1. Check the troubleshooting section
-2. Review IBKR API documentation
-3. Check rust-ibapi documentation: https://docs.rs/ibapi/
-4. Open an issue on GitHub with detailed logs and configuration
+# Aggressive Setup (Higher Frequency)
+[enhanced_strategy.indicators]
+macd_enabled = true
+macd_weight = 1.2
+stochastic_enabled = true
+stochastic_weight = 1.0
+williams_r_enabled = true
+williams_r_weight = 0.8
+```
+
+### Adjusting Signal Weights
+
+```toml
+[enhanced_strategy.signal_weights]
+# For Trending Markets
+trend_following = 1.5
+mean_reversion = 0.5
+
+# For Range-Bound Markets
+trend_following = 0.5
+mean_reversion = 1.5
+
+# For High Volatility
+volatility_adjustment = 1.2
+momentum = 1.1
+```
+
+## 🛡️ Risk Management
+
+### Position Sizing
+- **Fixed Percentage**: Set percentage of portfolio per position
+- **Volatility-Based**: Adjust size based on ATR
+- **Correlation-Aware**: Reduce size for correlated positions
+
+### Stop-Loss Strategies
+- **Fixed Percentage**: Static percentage below entry
+- **ATR-Based**: Dynamic based on volatility
+- **Support/Resistance**: Technical level-based
+
+### Portfolio-Level Limits
+- **Daily Loss Limit**: Maximum daily portfolio loss
+- **Drawdown Limit**: Maximum peak-to-trough decline
+- **Correlation Limit**: Maximum correlation between positions
+
+## 📊 Performance Monitoring
+
+### Key Metrics
+- **Sharpe Ratio**: Risk-adjusted returns
+- **Maximum Drawdown**: Largest peak-to-trough decline
+- **Win Rate**: Percentage of profitable trades
+- **Profit Factor**: Gross profit / Gross loss
+- **Calmar Ratio**: Annual return / Maximum drawdown
+
+### Real-Time Monitoring
+```bash
+# Enable detailed logging
+export RUST_LOG=debug
+
+# Monitor specific components
+export RUST_LOG=first_trading_app::strategy=debug
+export RUST_LOG=first_trading_app::indicators=info
+```
+
+## 🔧 Advanced Usage
+
+### Custom Timeframes
+```toml
+[trading]
+timeframe = "5min"  # 1min, 5min, 15min, 1h, 1d
+```
+
+### Multiple Symbol Sets
+```toml
+[trading]
+# Tech stocks
+symbols = ["AAPL", "MSFT", "GOOGL", "NVDA", "AMZN"]
+
+# Or ETFs
+symbols = ["SPY", "QQQ", "IWM", "EFA", "EEM"]
+
+# Or forex (if available)
+symbols = ["EUR.USD", "GBP.USD", "USD.JPY"]
+```
+
+### Dynamic Parameter Adjustment
+```rust
+// Example: Adjust parameters based on market conditions
+if volatility > 0.02 {
+    config.risk.stop_loss_pct = 0.03;  // Tighter stops in volatile markets
+}
+```
+
+## 🚨 Safety and Disclaimers
+
+### ⚠️ Important Warnings
+
+1. **Always Start with Paper Trading**: Test thoroughly before using real money
+2. **Risk Management is Critical**: Never risk more than you can afford to lose
+3. **Market Conditions Change**: Strategies that work in one market may not work in another
+4. **No Guarantees**: Past performance does not guarantee future results
+
+### Best Practices
+
+1. **Start Small**: Begin with small position sizes
+2. **Diversify**: Don't put all capital in one strategy
+3. **Monitor Continuously**: Keep track of performance and adjust as needed
+4. **Regular Reviews**: Periodically review and update strategies
+5. **Stay Informed**: Keep up with market conditions and news
+
+### Legal Disclaimer
+
+This software is for educational and research purposes only. The developers are not responsible for any financial losses. Always consult with financial professionals before making investment decisions.
+
+## 🤝 Contributing
+
+We welcome contributions! Please see [DEVELOPMENT.md](DEVELOPMENT.md) for detailed development guidelines.
+
+### Areas for Contribution
+- New technical indicators
+- Additional trading strategies
+- Performance optimizations
+- Documentation improvements
+- Test coverage expansion
+
+## 📚 Additional Resources
+
+- [DEVELOPMENT.md](DEVELOPMENT.md) - Developer guide
+- [Interactive Brokers API Documentation](https://interactivebrokers.github.io/tws-api/)
+- [Technical Analysis Concepts](https://www.investopedia.com/technical-analysis-4689657)
+- [Risk Management in Trading](https://www.investopedia.com/articles/trading/09/risk-management.asp)
+
+## 📞 Support
+
+For support and questions:
+1. Check the documentation and examples
+2. Review the troubleshooting section in DEVELOPMENT.md
+3. Open an issue on GitHub with detailed information
+4. Include logs, configuration, and error messages
+
+---
+
+**Happy Trading! 📈**
+
+Remember: Successful algorithmic trading requires careful strategy development, rigorous testing, and disciplined risk management.
