@@ -747,8 +747,29 @@ mod tests {
         let config = StrategyEngineConfig::default();
         let engine = StrategyEngine::new(config).unwrap();
         
-        let (action, confidence) = engine.determine_action(3.0, 1.0);
+        // Test StrongBuy: net_score > 2.0
+        let (action, confidence) = engine.determine_action(3.5, 1.0);
         assert!(matches!(action, Action::StrongBuy));
+        assert!(confidence > 0.0);
+        
+        // Test Buy: net_score > 0.5 but <= 2.0
+        let (action, confidence) = engine.determine_action(2.0, 1.0);
+        assert!(matches!(action, Action::Buy));
+        assert!(confidence > 0.0);
+        
+        // Test Hold: net_score between -0.5 and 0.5
+        let (action, confidence) = engine.determine_action(1.0, 1.0);
+        assert!(matches!(action, Action::Hold));
+        assert_eq!(confidence, 0.0);
+        
+        // Test Sell: net_score < -0.5 but >= -2.0
+        let (action, confidence) = engine.determine_action(1.0, 2.0);
+        assert!(matches!(action, Action::Sell));
+        assert!(confidence > 0.0);
+        
+        // Test StrongSell: net_score < -2.0
+        let (action, confidence) = engine.determine_action(1.0, 3.5);
+        assert!(matches!(action, Action::StrongSell));
         assert!(confidence > 0.0);
     }
 }
