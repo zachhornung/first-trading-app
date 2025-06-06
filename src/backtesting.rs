@@ -1,6 +1,6 @@
 use anyhow::Result;
 use chrono::{DateTime, Utc, Duration};
-use rust_decimal::prelude::ToPrimitive;
+use rust_decimal::{Decimal, prelude::ToPrimitive};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use log::info;
@@ -187,10 +187,10 @@ impl BacktestingEngine {
                 let price_data = PriceData {
                     symbol: symbol.clone(),
                     timestamp,
-                    open: ohlcv.open,
-                    high: ohlcv.high,
-                    low: ohlcv.low,
-                    close: ohlcv.close,
+                    open: Decimal::from_f64_retain(ohlcv.open).unwrap_or_default(),
+                    high: Decimal::from_f64_retain(ohlcv.high).unwrap_or_default(),
+                    low: Decimal::from_f64_retain(ohlcv.low).unwrap_or_default(),
+                    close: Decimal::from_f64_retain(ohlcv.close).unwrap_or_default(),
                     volume: ohlcv.volume,
                 };
 

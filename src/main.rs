@@ -25,6 +25,9 @@ use portfolio::PortfolioManager;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    // Load environment variables from .env file
+    dotenv::dotenv().ok();
+    
     // Initialize logging
     env_logger::init();
     

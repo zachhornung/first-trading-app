@@ -22,10 +22,10 @@ pub struct PriceData {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OHLCV {
     pub timestamp: DateTime<Utc>,
-    pub open: Decimal,
-    pub high: Decimal,
-    pub low: Decimal,
-    pub close: Decimal,
+    pub open: f64,
+    pub high: f64,
+    pub low: f64,
+    pub close: f64,
     pub volume: u64,
 }
 
@@ -115,10 +115,10 @@ impl MarketDataManager {
         if let Some(price) = market_data.last.or(market_data.bid).or(market_data.ask) {
             let ohlcv = OHLCV {
                 timestamp: market_data.timestamp,
-                open: price,
-                high: price,
-                low: price,
-                close: price,
+                open: price.to_f64().unwrap_or(0.0),
+                high: price.to_f64().unwrap_or(0.0),
+                low: price.to_f64().unwrap_or(0.0),
+                close: price.to_f64().unwrap_or(0.0),
                 volume: market_data.volume.unwrap_or(0),
             };
             
@@ -183,10 +183,10 @@ impl MarketDataManager {
                 let price_data = PriceData {
                     symbol: symbol.clone(),
                     timestamp: latest_bar.timestamp,
-                    open: latest_bar.open,
-                    high: latest_bar.high,
-                    low: latest_bar.low,
-                    close: latest_bar.close,
+                    open: Decimal::from_f64_retain(latest_bar.open).unwrap_or_default(),
+                    high: Decimal::from_f64_retain(latest_bar.high).unwrap_or_default(),
+                    low: Decimal::from_f64_retain(latest_bar.low).unwrap_or_default(),
+                    close: Decimal::from_f64_retain(latest_bar.close).unwrap_or_default(),
                     volume: latest_bar.volume,
                 };
                 result.insert(symbol.clone(), price_data);

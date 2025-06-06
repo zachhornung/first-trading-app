@@ -6,6 +6,7 @@ pub mod portfolio;
 pub mod indicators;
 pub mod strategy_engine;
 pub mod backtesting;
+pub mod historical_backtesting;
 pub mod orders;
 pub mod analytics;
 
