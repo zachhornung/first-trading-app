@@ -305,10 +305,10 @@ mod tests {
         
         let ohlcv = OHLCV {
             timestamp: Utc::now(),
-            open: dec!(100.00),
-            high: dec!(105.00),
-            low: dec!(99.00),
-            close: dec!(104.00),
+            open: 100.00,
+            high: 105.00,
+            low: 99.00,
+            close: 104.00,
             volume: 5000,
         };
 
@@ -344,10 +344,10 @@ mod tests {
         for i in 0..10 {
             let ohlcv = OHLCV {
                 timestamp: Utc::now(),
-                open: Decimal::from(100 + i),
-                high: Decimal::from(105 + i),
-                low: Decimal::from(95 + i),
-                close: Decimal::from(102 + i),
+                open: (100 + i) as f64,
+                high: (105 + i) as f64,
+                low: (95 + i) as f64,
+                close: (102 + i) as f64,
                 volume: 1000,
             };
             manager.add_ohlcv_data("TEST", ohlcv).await.unwrap();

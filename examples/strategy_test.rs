@@ -109,10 +109,10 @@ async fn test_trend_reversal_strategy() -> Result<()> {
         // Add price data to our data manager
         let ohlcv = OHLCV {
             timestamp: price_data.timestamp,
-            open: price_data.open,
-            high: price_data.high,
-            low: price_data.low,
-            close: price_data.close,
+            open: price_data.open.to_f64().unwrap_or(0.0),
+            high: price_data.high.to_f64().unwrap_or(0.0),
+            low: price_data.low.to_f64().unwrap_or(0.0),
+            close: price_data.close.to_f64().unwrap_or(0.0),
             volume: price_data.volume,
         };
         
